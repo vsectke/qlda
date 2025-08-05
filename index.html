@@ -899,7 +899,24 @@
         
         // Initialize Supabase client
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+ // 1) Trích session từ URL sau khi OAuth redirect
+  window.addEventListener('load', async () => {
+    const { data: { session }, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
+    if (error) {
+      console.error('OAuth callback error:', error.message);
+      return;
+    }
+    if (session) {
+      currentUser = session.user;
+      onAuthChange(currentUser);
+    }
+  });
 
+  // 2) Lắng nghe mọi thay đổi auth state
+  supabase.auth.onAuthStateChange((_event, session) => {
+    currentUser = session?.user || null;
+    onAuthChange(currentUser);
+  });
         // ========================================
         // GLOBAL VARIABLES
         // ========================================
