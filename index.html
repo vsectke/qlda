@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ thống Quản lý Dự án & Báo cáo - Supabase</title>
     
-    <!-- Supabase JS v2 UMD -->
+    <!-- Supabase JS v2 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
@@ -199,55 +199,6 @@
             border-color: #667eea;
         }
         
-        /* Autocomplete Styles */
-        .autocomplete-wrapper {
-            position: relative;
-        }
-        
-        .autocomplete-input {
-            width: 100%;
-            padding: 10px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s ease;
-        }
-        
-        .autocomplete-input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .autocomplete-suggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-        }
-        
-        .autocomplete-suggestion {
-            padding: 10px 15px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-        
-        .autocomplete-suggestion:hover,
-        .autocomplete-suggestion.selected {
-            background-color: #f0f0f0;
-        }
-        
-        .autocomplete-suggestion strong {
-            color: #667eea;
-        }
-        
         .btn {
             padding: 10px 20px;
             border: none;
@@ -416,13 +367,6 @@
             font-size: 14px;
         }
         
-        .weekly-report-tasks {
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        
         .task-item {
             background: white;
             padding: 15px;
@@ -501,17 +445,67 @@
             font-size: 12px;
         }
         
-        .project-info {
-            background: #f0f4ff;
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-top: 8px;
-            font-size: 13px;
-            color: #555;
+        .config-section {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .config-section h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        
+        .config-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
+    <!-- Configuration Section -->
+    <div id="configSection" class="login-container" style="display: none;">
+        <div class="login-box" style="max-width: 600px;">
+            <h1>Cấu hình Supabase</h1>
+            <div class="config-section">
+                <h3>⚠️ Chưa cấu hình kết nối Supabase</h3>
+                <p style="margin-bottom: 15px;">Vui lòng nhập thông tin từ Supabase Dashboard:</p>
+                
+                <div class="form-group" style="text-align: left;">
+                    <label>Project URL:</label>
+                    <input type="text" id="configUrl" class="config-input" 
+                           placeholder="https://xxxxx.supabase.co">
+                </div>
+                
+                <div class="form-group" style="text-align: left;">
+                    <label>Anon Key:</label>
+                    <textarea id="configKey" class="config-input" rows="3" 
+                              placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."></textarea>
+                </div>
+                
+                <button class="btn btn-primary" onclick="saveConfig()">Lưu và Kết nối</button>
+                
+                <div style="margin-top: 20px; text-align: left; font-size: 12px; color: #666;">
+                    <strong>Hướng dẫn:</strong>
+                    <ol style="padding-left: 20px;">
+                        <li>Đăng nhập vào Supabase Dashboard</li>
+                        <li>Chọn project của bạn</li>
+                        <li>Vào Settings → API</li>
+                        <li>Copy Project URL và anon key</li>
+                        <li>Dán vào form trên và nhấn Lưu</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Login Page -->
     <div id="loginPage" class="login-container">
         <div class="login-box">
@@ -528,12 +522,6 @@
             </button>
             <div id="loginError" class="error" style="display: none; margin-top: 20px;"></div>
             <div id="loginInfo" class="info" style="display: none; margin-top: 20px;"></div>
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
-                <p style="font-size: 12px; color: #999;">
-                    Lưu ý: Bạn cần có tài khoản Google để đăng nhập.<br>
-                    Lần đầu đăng nhập sẽ tự động tạo tài khoản trong hệ thống.
-                </p>
-            </div>
         </div>
     </div>
 
@@ -569,16 +557,7 @@
                 <div id="projects" class="section active">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <h2>Quản lý Dự án</h2>
-                        <button class="btn btn-primary" onclick="showProjectModal()">+ Thêm dự án mới</button>
-                    </div>
-                    <div class="filters">
-                        <div class="filter-group">
-                            <label>Tìm kiếm dự án:</label>
-                            <div class="autocomplete-wrapper">
-                                <input type="text" class="autocomplete-input" id="projectSearch" placeholder="Nhập tên dự án hoặc khách hàng..." onkeyup="searchProjects(this.value)">
-                                <div class="autocomplete-suggestions" id="projectSearchSuggestions"></div>
-                            </div>
-                        </div>
+                        <button class="btn btn-primary" id="addProjectBtn" onclick="showProjectModal()">+ Thêm dự án mới</button>
                     </div>
                     <div class="table-container">
                         <table id="projectsTable">
@@ -608,13 +587,6 @@
                         <button class="btn btn-primary" onclick="showTaskModal()">+ Thêm công việc mới</button>
                     </div>
                     <div class="filters">
-                        <div class="filter-group">
-                            <label>Tìm kiếm công việc:</label>
-                            <div class="autocomplete-wrapper">
-                                <input type="text" class="autocomplete-input" id="taskSearch" placeholder="Nhập tên công việc..." onkeyup="searchTasks(this.value)">
-                                <div class="autocomplete-suggestions" id="taskSearchSuggestions"></div>
-                            </div>
-                        </div>
                         <div class="filter-group">
                             <label>Lọc theo dự án:</label>
                             <select class="form-control" id="taskProjectFilter" onchange="loadTasks()">
@@ -698,13 +670,6 @@
                     <h2>Hoạt động Tuần của Nhân viên</h2>
                     <div class="filters">
                         <div class="filter-group">
-                            <label>Tìm kiếm nhân viên:</label>
-                            <div class="autocomplete-wrapper">
-                                <input type="text" class="autocomplete-input" id="userActivitySearch" placeholder="Nhập tên nhân viên..." onkeyup="searchUserActivity(this.value)">
-                                <div class="autocomplete-suggestions" id="userActivitySuggestions"></div>
-                            </div>
-                        </div>
-                        <div class="filter-group">
                             <label>Năm:</label>
                             <select class="form-control" id="activityYearFilter" onchange="loadActivity()">
                                 <option value="2025">2025</option>
@@ -718,12 +683,6 @@
                         <div class="filter-group">
                             <label>Đến tuần:</label>
                             <input type="number" class="form-control" id="activityWeekTo" min="1" max="53" value="53" onchange="loadActivity()">
-                        </div>
-                        <div class="filter-group">
-                            <label>Dự án:</label>
-                            <select class="form-control" id="activityProjectFilter" onchange="loadActivity()">
-                                <option value="">Tất cả dự án</option>
-                            </select>
                         </div>
                     </div>
                     <div class="table-container">
@@ -931,22 +890,12 @@
 
     <script>
         // ========================================
-        // SUPABASE CONFIGURATION
+        // CONFIGURATION
         // ========================================
-        // THAY ĐỔI THÔNG TIN NÀY VỚI THÔNG TIN TỪ SUPABASE PROJECT CỦA BẠN
-        const SUPABASE_URL = 'https://vtuytabzqlxjbfpeniit.supabase.co'; // Thay bằng URL từ Supabase
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0dXl0YWJ6cWx4amJmcGVuaWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzNzY2NDksImV4cCI6MjA2OTk1MjY0OX0.NVSpMhIn8GVqKfbOHglkoZnCUDyS4gFR0xyHIAoxNZ8'; // Thay bằng anon key từ Supabase
-   // Kiểm tra cấu hình
-        if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
-            alert('⚠️ Vui lòng cấu hình SUPABASE_URL và SUPABASE_ANON_KEY trong file!\n\nHướng dẫn:\n1. Vào Supabase Dashboard\n2. Settings → API\n3. Copy Project URL và anon key\n4. Thay thế vào file này');
-        }
+        let SUPABASE_URL = localStorage.getItem('https://vtuytabzqlxjbfpeniit.supabase.co') || '';
+        let SUPABASE_ANON_KEY = localStorage.getItem('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0dXl0YWJ6cWx4amJmcGVuaWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzNzY2NDksImV4cCI6MjA2OTk1MjY0OX0.NVSpMhIn8GVqKfbOHglkoZnCUDyS4gFR0xyHIAoxNZ8') || '';
         
-        // Initialize Supabase client
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        // ========================================
-        // GLOBAL VARIABLES
-        // ========================================
+        let supabase = null;
         let currentUser = null;
         let db = {
             projects: [],
@@ -956,26 +905,69 @@
             activities: []
         };
 
-        // ========================================
-        // AUTHENTICATION FUNCTIONS
-        // ========================================
-        
-        // Initialize - Check authentication status
+        // Check configuration on load
+        function checkConfiguration() {
+            if (!SUPABASE_URL || !SUPABASE_ANON_KEY || 
+                SUPABASE_URL === 'https://vtuytabzqlxjbfpeniit.supabase.co' || 
+                SUPABASE_ANON_KEY === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0dXl0YWJ6cWx4amJmcGVuaWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzNzY2NDksImV4cCI6MjA2OTk1MjY0OX0.NVSpMhIn8GVqKfbOHglkoZnCUDyS4gFR0xyHIAoxNZ8') {
+                document.getElementById('configSection').style.display = 'flex';
+                document.getElementById('loginPage').style.display = 'none';
+                return false;
+            }
+            return true;
+        }
+
+        // Save configuration
+        function saveConfig() {
+            const url = document.getElementById('configUrl').value.trim();
+            const key = document.getElementById('configKey').value.trim();
+            
+            if (!url || !key) {
+                alert('Vui lòng nhập đầy đủ thông tin!');
+                return;
+            }
+            
+            localStorage.setItem('SUPABASE_URL', url);
+            localStorage.setItem('SUPABASE_ANON_KEY', key);
+            
+            SUPABASE_URL = url;
+            SUPABASE_ANON_KEY = key;
+            
+            // Reload page to initialize with new config
+            window.location.reload();
+        }
+
+        // Initialize app
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('Initializing app...');
+            
+            if (!checkConfiguration()) {
+                return;
+            }
+            
+            // Initialize Supabase client
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('Supabase client initialized');
+            } catch (error) {
+                console.error('Error initializing Supabase:', error);
+                alert('Lỗi khởi tạo Supabase. Vui lòng kiểm tra lại cấu hình.');
+                document.getElementById('configSection').style.display = 'flex';
+                document.getElementById('loginPage').style.display = 'none';
+                return;
+            }
             
             // Check if user is already logged in
             const { data: { session }, error } = await supabase.auth.getSession();
             
             if (error) {
                 console.error('Session error:', error);
-                showError('loginError', 'Lỗi kiểm tra phiên đăng nhập: ' + error.message);
                 showLoginPage();
                 return;
             }
             
             if (session) {
-                console.log('Existing session found:', session);
+                console.log('Existing session found');
                 await handleSuccessfulLogin(session);
             } else {
                 console.log('No existing session');
@@ -984,19 +976,12 @@
             
             // Listen for auth state changes
             supabase.auth.onAuthStateChange(async (event, session) => {
-                console.log('Auth state changed:', event, session);
+                console.log('Auth state changed:', event);
                 
                 if (event === 'SIGNED_IN' && session) {
                     await handleSuccessfulLogin(session);
                 } else if (event === 'SIGNED_OUT') {
                     showLoginPage();
-                } else if (event === 'TOKEN_REFRESHED') {
-                    console.log('Token refreshed');
-                } else if (event === 'USER_UPDATED') {
-                    console.log('User updated');
-                    if (session) {
-                        await handleSuccessfulLogin(session);
-                    }
                 }
             });
         });
@@ -1004,157 +989,95 @@
         // Login with Google
         async function loginWithGoogle() {
             try {
-                // Show loading state
                 const loginBtn = document.querySelector('.google-login-btn');
                 const btnText = loginBtn.querySelector('.btn-text');
                 loginBtn.disabled = true;
                 btnText.textContent = 'Đang chuyển hướng...';
                 
-                // Clear any previous errors
-                document.getElementById('loginError').style.display = 'none';
-                
-                // Show info message
-                showInfo('loginInfo', 'Đang chuyển hướng đến Google để đăng nhập...');
-                
                 const { data, error } = await supabase.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
-                        redirectTo: window.location.origin + window.location.pathname,
-                        queryParams: {
-                            access_type: 'offline',
-                            prompt: 'consent'
-                        }
+                        redirectTo: window.location.href.split('#')[0]
                     }
                 });
                 
                 if (error) throw error;
                 
-                console.log('OAuth redirect initiated:', data);
-                
             } catch (error) {
                 console.error('Login error:', error);
-                
-                // Reset button state
                 const loginBtn = document.querySelector('.google-login-btn');
                 const btnText = loginBtn.querySelector('.btn-text');
                 loginBtn.disabled = false;
                 btnText.textContent = 'Đăng nhập với Google';
                 
-                // Hide info and show error
-                document.getElementById('loginInfo').style.display = 'none';
-                showError('loginError', 'Lỗi đăng nhập: ' + error.message);
+                alert('Lỗi đăng nhập: ' + error.message + '\n\nVui lòng kiểm tra:\n1. Đã bật Google Auth trong Supabase\n2. Đã cấu hình Redirect URLs\n3. Đã nhập Client ID và Secret');
             }
         }
 
         // Handle successful login
         async function handleSuccessfulLogin(session) {
             try {
-                console.log('Handling successful login for user:', session.user.email);
+                console.log('Handling successful login...');
                 
-                // First check if profile exists
-                const { data: existingProfile, error: checkError } = await supabase
+                // Check if email is authorized
+                const { data: authorizedEmail, error: authEmailError } = await supabase
+                    .from('authorized_emails')
+                    .select('*')
+                    .eq('email', session.user.email)
+                    .eq('is_active', true)
+                    .single();
+                
+                if (authEmailError || !authorizedEmail) {
+                    console.error('Email not authorized:', session.user.email);
+                    await supabase.auth.signOut();
+                    alert('Email của bạn chưa được cấp quyền truy cập hệ thống. Vui lòng liên hệ Admin.');
+                    showLoginPage();
+                    return;
+                }
+                
+                // Check/create user profile
+                const { data: profile, error: profileError } = await supabase
                     .from('user_profiles')
                     .select('*')
                     .eq('id', session.user.id)
-                    .maybeSingle();
+                    .single();
                 
-                if (checkError && checkError.code !== 'PGRST116') {
-                    console.error('Error checking profile:', checkError);
+                if (profileError && profileError.code !== 'PGRST116') {
+                    console.error('Profile error:', profileError);
                 }
                 
-                let userProfile = existingProfile;
+                let userProfile = profile;
                 
-                // If no profile exists, create one
                 if (!userProfile) {
-                    console.log('Creating new user profile...');
+                    // Profile will be created by database trigger
+                    // Wait a moment and try again
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                     
-                    const profileData = {
-                        id: session.user.id,
-                        email: session.user.email,
-                        full_name: session.user.user_metadata?.full_name || 
-                                  session.user.user_metadata?.name || 
-                                  session.user.email.split('@')[0],
-                        avatar_url: session.user.user_metadata?.avatar_url || 
-                                   session.user.user_metadata?.picture || ''
-                    };
-                    
-                    const { data: newProfile, error: insertError } = await supabase
+                    const { data: retryProfile } = await supabase
                         .from('user_profiles')
-                        .insert(profileData)
-                        .select()
+                        .select('*')
+                        .eq('id', session.user.id)
                         .single();
                     
-                    if (insertError) {
-                        console.error('Error creating profile:', insertError);
-                        // Try to get profile again in case it was created by trigger
-                        const { data: retriedProfile } = await supabase
-                            .from('user_profiles')
-                            .select('*')
-                            .eq('id', session.user.id)
-                            .maybeSingle();
-                        
-                        userProfile = retriedProfile;
-                    } else {
-                        userProfile = newProfile;
-                        console.log('Profile created successfully');
-                    }
+                    userProfile = retryProfile;
                 }
                 
-                // Update profile with latest Google info if needed
-                if (userProfile && session.user.user_metadata) {
-                    const updates = {};
-                    const latestName = session.user.user_metadata.full_name || session.user.user_metadata.name;
-                    const latestAvatar = session.user.user_metadata.avatar_url || session.user.user_metadata.picture;
-                    
-                    if (latestName && latestName !== userProfile.full_name) {
-                        updates.full_name = latestName;
-                    }
-                    if (latestAvatar && latestAvatar !== userProfile.avatar_url) {
-                        updates.avatar_url = latestAvatar;
-                    }
-                    
-                    if (Object.keys(updates).length > 0) {
-                        console.log('Updating profile with latest info:', updates);
-                        await supabase
-                            .from('user_profiles')
-                            .update(updates)
-                            .eq('id', session.user.id);
-                    }
-                }
-                
-                // Set current user with profile data
                 currentUser = {
                     id: session.user.id,
                     email: session.user.email,
-                    displayName: userProfile?.full_name || 
-                                session.user.user_metadata?.full_name || 
-                                session.user.user_metadata?.name || 
-                                session.user.email.split('@')[0],
-                    photoURL: userProfile?.avatar_url || 
-                             session.user.user_metadata?.avatar_url || 
-                             session.user.user_metadata?.picture || '',
-                    role: userProfile?.role || 'staff',
-                    code_id: userProfile?.code_id || null
+                    displayName: userProfile?.full_name || session.user.email?.split('@')[0] || 'User',
+                    photoURL: userProfile?.avatar_url || '',
+                    role: userProfile?.role || authorizedEmail.role || 'staff',
+                    code_id: userProfile?.code_id || 'N/A',
+                    status: userProfile?.status || 'active'
                 };
                 
-                console.log('User logged in successfully:', currentUser);
+                console.log('User logged in:', currentUser);
                 showMainApp();
                 
             } catch (error) {
-                console.error('Error handling login:', error);
-                // Still allow login even if profile setup fails
-                currentUser = {
-                    id: session.user.id,
-                    email: session.user.email,
-                    displayName: session.user.user_metadata?.full_name || 
-                                session.user.user_metadata?.name || 
-                                session.user.email.split('@')[0],
-                    photoURL: session.user.user_metadata?.avatar_url || 
-                             session.user.user_metadata?.picture || '',
-                    role: 'staff',
-                    code_id: null
-                };
-                showMainApp();
+                console.error('Error in handleSuccessfulLogin:', error);
+                showMainApp(); // Still show app even if profile creation fails
             }
         }
 
@@ -1173,7 +1096,6 @@
                     activities: []
                 };
                 
-                console.log('User logged out successfully');
                 showLoginPage();
             } catch (error) {
                 console.error('Logout error:', error);
@@ -1183,42 +1105,115 @@
 
         // Show login page
         function showLoginPage() {
+            document.getElementById('configSection').style.display = 'none';
             document.getElementById('loginPage').style.display = 'flex';
             document.getElementById('mainApp').style.display = 'none';
-            
-            // Reset login button state
-            const loginBtn = document.querySelector('.google-login-btn');
-            if (loginBtn) {
-                loginBtn.disabled = false;
-                const btnText = loginBtn.querySelector('.btn-text');
-                if (btnText) {
-                    btnText.textContent = 'Đăng nhập với Google';
-                }
-            }
         }
 
         // Show main app
         function showMainApp() {
+            document.getElementById('configSection').style.display = 'none';
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
             document.querySelector('.app-container').style.display = 'block';
             updateUserInfo();
+            updateUIByRole(); // Update UI based on user role
             loadInitialData();
         }
 
-        // Update user info in UI
+        // Update UI based on user role
+        function updateUIByRole() {
+            const role = currentUser?.role || 'staff';
+            
+            // Hide/show elements based on role
+            if (role === 'staff') {
+                // Staff cannot create projects
+                const projectAddBtns = document.querySelectorAll('[onclick*="showProjectModal()"]');
+                projectAddBtns.forEach(btn => {
+                    if (!btn.classList.contains('edit-btn')) {
+                        btn.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Update navigation if needed
+            if (role === 'admin') {
+                // Admin can see everything - maybe add admin panel later
+                addAdminMenu();
+            }
+        }
+        
+        // Add admin menu for admin users
+        function addAdminMenu() {
+            const tabs = document.querySelector('.tabs');
+            if (!document.getElementById('adminTab')) {
+                const adminTab = document.createElement('button');
+                adminTab.id = 'adminTab';
+                adminTab.className = 'tab';
+                adminTab.innerHTML = '⚙️ Quản trị';
+                adminTab.onclick = () => showSection('admin');
+                tabs.appendChild(adminTab);
+                
+                // Add admin section to content
+                const content = document.querySelector('.content');
+                const adminSection = document.createElement('div');
+                adminSection.id = 'admin';
+                adminSection.className = 'section';
+                adminSection.innerHTML = `
+                    <h2>Quản trị Hệ thống</h2>
+                    <div class="stats-grid" style="margin-bottom: 20px;">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalUsers">0</div>
+                            <div class="stat-label">Tổng người dùng</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="activeUsers">0</div>
+                            <div class="stat-label">Đang hoạt động</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalProjects">0</div>
+                            <div class="stat-label">Tổng dự án</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="pendingReports">0</div>
+                            <div class="stat-label">Báo cáo chờ duyệt</div>
+                        </div>
+                    </div>
+                    <h3>Quản lý Email được phép truy cập</h3>
+                    <button class="btn btn-primary" onclick="showAddEmailModal()">+ Thêm Email</button>
+                    <div class="table-container">
+                        <table id="authorizedEmailsTable">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Vai trò</th>
+                                    <th>Trạng thái</th>
+                                    <th>Người thêm</th>
+                                    <th>Ngày thêm</th>
+                                    <th>Ghi chú</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="7" class="loading">Đang tải...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                content.appendChild(adminSection);
+            }
+        }
+
+        // Update user info
         function updateUserInfo() {
             if (currentUser) {
                 document.getElementById('userName').textContent = currentUser.displayName;
                 document.getElementById('userRole').textContent = getRoleDisplay(currentUser.role);
-                document.getElementById('userCode').textContent = `Mã: ${currentUser.code_id || 'N/A'}`;
+                document.getElementById('userCode').textContent = `Mã: ${currentUser.code_id}`;
                 
                 const avatar = document.getElementById('userAvatar');
                 avatar.src = currentUser.photoURL || 
                     `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.displayName)}&background=667eea&color=fff`;
-                avatar.onerror = function() {
-                    this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.displayName)}&background=667eea&color=fff`;
-                };
             }
         }
 
@@ -1231,29 +1226,29 @@
             return roleMap[role] || role;
         }
 
-        // ========================================
-        // TAB NAVIGATION
-        // ========================================
+        // Tab navigation
         function showSection(sectionId) {
-            // Hide all sections
             document.querySelectorAll('.section').forEach(section => {
                 section.classList.remove('active');
             });
             
-            // Remove active class from all tabs
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
             });
             
-            // Show selected section
             document.getElementById(sectionId).classList.add('active');
-            
-            // Add active class to clicked tab
             event.target.classList.add('active');
             
-            // Load data for the section
+            // Check permissions and show/hide buttons
+            const role = currentUser?.role || 'staff';
+            
             switch(sectionId) {
                 case 'projects':
+                    // Hide add button for staff
+                    const addProjectBtn = document.getElementById('addProjectBtn');
+                    if (addProjectBtn) {
+                        addProjectBtn.style.display = checkPermission('create', 'project') ? 'inline-block' : 'none';
+                    }
                     loadProjects();
                     break;
                 case 'tasks':
@@ -1268,42 +1263,136 @@
                 case 'progress':
                     loadProgress();
                     break;
+                case 'admin':
+                    if (role === 'admin') {
+                        loadAdminData();
+                    }
+                    break;
+            }
+        }
+        
+        // Load admin data
+        async function loadAdminData() {
+            try {
+                // Load authorized emails
+                const { data: emails, error: emailsError } = await supabase
+                    .from('authorized_emails')
+                    .select('*')
+                    .order('email');
+                
+                if (emailsError) throw emailsError;
+                
+                displayAuthorizedEmails(emails);
+                
+                // Load statistics
+                const { data: stats, error: statsError } = await supabase
+                    .rpc('get_admin_stats');
+                
+                if (!statsError && stats) {
+                    document.getElementById('totalUsers').textContent = stats.total_users || 0;
+                    document.getElementById('activeUsers').textContent = stats.active_users || 0;
+                    document.getElementById('totalProjects').textContent = stats.total_projects || 0;
+                    document.getElementById('pendingReports').textContent = stats.pending_reports || 0;
+                }
+            } catch (error) {
+                console.error('Error loading admin data:', error);
+            }
+        }
+        
+        // Display authorized emails
+        function displayAuthorizedEmails(emails) {
+            const tbody = document.querySelector('#authorizedEmailsTable tbody');
+            
+            if (!emails || emails.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Không có dữ liệu</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            emails.forEach(email => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${email.email}</td>
+                        <td>${getRoleDisplay(email.role)}</td>
+                        <td>${email.is_active ? 
+                            '<span style="color: green;">✓ Hoạt động</span>' : 
+                            '<span style="color: red;">✗ Vô hiệu</span>'}</td>
+                        <td>${email.added_by || 'System'}</td>
+                        <td>${formatDate(email.added_at)}</td>
+                        <td>${email.notes || '-'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-warning" onclick="toggleEmailStatus('${email.email}', ${email.is_active})">
+                                ${email.is_active ? 'Vô hiệu' : 'Kích hoạt'}
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteAuthorizedEmail('${email.email}')">Xóa</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+        
+        // Toggle email status
+        async function toggleEmailStatus(email, currentStatus) {
+            try {
+                const { error } = await supabase
+                    .from('authorized_emails')
+                    .update({ is_active: !currentStatus })
+                    .eq('email', email);
+                
+                if (error) throw error;
+                
+                await loadAdminData();
+                showSuccess('Đã cập nhật trạng thái email!');
+            } catch (error) {
+                console.error('Error toggling email status:', error);
+                alert('Lỗi cập nhật trạng thái: ' + error.message);
+            }
+        }
+        
+        // Delete authorized email
+        async function deleteAuthorizedEmail(email) {
+            if (!confirm(`Bạn có chắc muốn xóa email ${email}?`)) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('authorized_emails')
+                    .delete()
+                    .eq('email', email);
+                
+                if (error) throw error;
+                
+                await loadAdminData();
+                showSuccess('Đã xóa email!');
+            } catch (error) {
+                console.error('Error deleting email:', error);
+                alert('Lỗi xóa email: ' + error.message);
             }
         }
 
-        // ========================================
-        // INITIAL DATA LOADING
-        // ========================================
+        // Load initial data
         async function loadInitialData() {
             try {
-                // Load all users for dropdowns
                 const { data: users, error: usersError } = await supabase
                     .from('user_profiles')
                     .select('*')
                     .order('full_name');
                 
                 if (usersError) throw usersError;
-                db.users = users;
+                db.users = users || [];
                 
-                // Load projects
                 await loadProjects();
-                
-                // Populate filters
                 populateFilters();
                 populateWeekFilter();
             } catch (error) {
                 console.error('Error loading initial data:', error);
-                alert('Lỗi tải dữ liệu: ' + error.message);
             }
         }
 
-        // ========================================
-        // PROJECTS CRUD
-        // ========================================
+        // Load projects
         async function loadProjects() {
             try {
                 const tbody = document.querySelector('#projectsTable tbody');
-                tbody.innerHTML = '<tr><td colspan="8" class="loading">Đang tải dữ liệu...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="loading"><div class="loading-spinner"></div> Đang tải dữ liệu...</td></tr>';
                 
                 const { data: projects, error } = await supabase
                     .from('projects')
@@ -1312,19 +1401,19 @@
                 
                 if (error) throw error;
                 
-                db.projects = projects;
-                displayProjects(projects);
+                db.projects = projects || [];
+                displayProjects(db.projects);
             } catch (error) {
                 console.error('Error loading projects:', error);
                 const tbody = document.querySelector('#projectsTable tbody');
-                tbody.innerHTML = `<tr><td colspan="8" class="error">Lỗi tải dữ liệu: ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="error">Lỗi: ${error.message}</td></tr>`;
             }
         }
 
         function displayProjects(projects) {
             const tbody = document.querySelector('#projectsTable tbody');
             
-            if (projects.length === 0) {
+            if (!projects || projects.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Không có dữ liệu</td></tr>';
                 return;
             }
@@ -1342,10 +1431,8 @@
                         <td>${getStatusBadge(project.status)}</td>
                         <td>
                             <div class="actions">
-                                ${canEdit('project', project) ? `
-                                    <button class="btn btn-sm btn-primary" onclick="editProject('${project.project_id}')">Sửa</button>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteProject('${project.project_id}')">Xóa</button>
-                                ` : '<span class="no-permission">Không có quyền</span>'}
+                                <button class="btn btn-sm btn-primary" onclick="editProject('${project.project_id}')">Sửa</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteProject('${project.project_id}')">Xóa</button>
                             </div>
                         </td>
                     </tr>
@@ -1353,6 +1440,357 @@
             });
         }
 
+        // Load tasks
+        async function loadTasks() {
+            try {
+                const tbody = document.querySelector('#tasksTable tbody');
+                tbody.innerHTML = '<tr><td colspan="10" class="loading"><div class="loading-spinner"></div> Đang tải dữ liệu...</td></tr>';
+                
+                let query = supabase
+                    .from('tasks')
+                    .select(`
+                        *,
+                        project:projects(proj_name),
+                        user:user_profiles(full_name)
+                    `)
+                    .order('created_at', { ascending: false });
+                
+                const projectFilter = document.getElementById('taskProjectFilter')?.value;
+                const userFilter = document.getElementById('taskUserFilter')?.value;
+                
+                if (projectFilter) {
+                    query = query.eq('project_id', projectFilter);
+                }
+                if (userFilter) {
+                    query = query.eq('user_id', userFilter);
+                }
+                
+                const { data: tasks, error } = await query;
+                
+                if (error) throw error;
+                
+                db.tasks = tasks || [];
+                displayTasks(db.tasks);
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+                const tbody = document.querySelector('#tasksTable tbody');
+                tbody.innerHTML = `<tr><td colspan="10" class="error">Lỗi: ${error.message}</td></tr>`;
+            }
+        }
+
+        function displayTasks(tasks) {
+            const tbody = document.querySelector('#tasksTable tbody');
+            
+            if (!tasks || tasks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center;">Không có dữ liệu</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            tasks.forEach(task => {
+                const canEdit = checkPermission('update', 'task', task);
+                const canDelete = checkPermission('delete', 'task', task);
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${task.task_id}</td>
+                        <td>${task.project?.proj_name || '-'}</td>
+                        <td>${task.user?.full_name || '-'}</td>
+                        <td>${task.task_name}</td>
+                        <td>${task.description || '-'}</td>
+                        <td>${formatDate(task.start_date)}</td>
+                        <td>${formatDate(task.end_date)}</td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${task.progress_pct}%"></div>
+                            </div>
+                            ${task.progress_pct}%
+                        </td>
+                        <td>${getStatusBadge(task.status)}</td>
+                        <td>
+                            <div class="actions">
+                                ${canEdit ? `
+                                    <button class="btn btn-sm btn-primary" onclick="editTask('${task.task_id}')">Sửa</button>
+                                ` : ''}
+                                ${canDelete ? `
+                                    <button class="btn btn-sm btn-danger" onclick="deleteTask('${task.task_id}')">Xóa</button>
+                                ` : ''}
+                                ${!canEdit && !canDelete ? '<span class="no-permission">Không có quyền</span>' : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Load weekly reports
+        async function loadWeeklyReports() {
+            try {
+                const tbody = document.querySelector('#weeklyReportsTable tbody');
+                tbody.innerHTML = '<tr><td colspan="8" class="loading"><div class="loading-spinner"></div> Đang tải dữ liệu...</td></tr>';
+                
+                let query = supabase
+                    .from('weekly_reports')
+                    .select(`
+                        *,
+                        user:user_profiles(full_name)
+                    `)
+                    .order('year', { ascending: false })
+                    .order('iso_week', { ascending: false });
+                
+                const yearFilter = document.getElementById('reportYearFilter')?.value;
+                const weekFilter = document.getElementById('reportWeekFilter')?.value;
+                
+                if (yearFilter) {
+                    query = query.eq('year', parseInt(yearFilter));
+                }
+                if (weekFilter) {
+                    query = query.eq('iso_week', parseInt(weekFilter));
+                }
+                
+                const { data: reports, error } = await query;
+                
+                if (error) throw error;
+                
+                displayWeeklyReports(reports || []);
+            } catch (error) {
+                console.error('Error loading weekly reports:', error);
+                const tbody = document.querySelector('#weeklyReportsTable tbody');
+                tbody.innerHTML = `<tr><td colspan="8" class="error">Lỗi: ${error.message}</td></tr>`;
+            }
+        }
+
+        function displayWeeklyReports(reports) {
+            const tbody = document.querySelector('#weeklyReportsTable tbody');
+            
+            if (!reports || reports.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Không có dữ liệu</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            reports.forEach(report => {
+                const canEdit = checkPermission('update', 'report', report);
+                const canDelete = checkPermission('delete', 'report', report);
+                const canApprove = checkPermission('approve', 'report', report);
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${report.report_id}</td>
+                        <td>${report.user?.full_name || '-'}</td>
+                        <td>${report.iso_week}</td>
+                        <td>${report.year}</td>
+                        <td>${report.report_note || '-'}</td>
+                        <td>${getStatusBadge(report.status)}</td>
+                        <td>${formatDate(report.submitted_at)}</td>
+                        <td>
+                            <div class="actions">
+                                ${canEdit ? `
+                                    <button class="btn btn-sm btn-primary" onclick="editWeeklyReport(${report.report_id})">Sửa</button>
+                                ` : ''}
+                                ${canDelete ? `
+                                    <button class="btn btn-sm btn-danger" onclick="deleteWeeklyReport(${report.report_id})">Xóa</button>
+                                ` : ''}
+                                ${canApprove && report.status === 'submitted' ? `
+                                    <button class="btn btn-sm btn-success" onclick="approveReport(${report.report_id})">Duyệt</button>
+                                    <button class="btn btn-sm btn-warning" onclick="rejectReport(${report.report_id})">Từ chối</button>
+                                ` : ''}
+                                ${!canEdit && !canDelete && !canApprove ? '<span class="no-permission">Không có quyền</span>' : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+        
+        // Approve report function
+        async function approveReport(reportId) {
+            if (!confirm('Bạn có chắc muốn duyệt báo cáo này?')) return;
+            
+            try {
+                const { data, error } = await supabase
+                    .rpc('approve_weekly_report', { p_report_id: reportId });
+                
+                if (error) throw error;
+                
+                await loadWeeklyReports();
+                showSuccess('Đã duyệt báo cáo!');
+            } catch (error) {
+                console.error('Error approving report:', error);
+                alert('Lỗi duyệt báo cáo: ' + error.message);
+            }
+        }
+        
+        // Reject report function
+        async function rejectReport(reportId) {
+            const reason = prompt('Lý do từ chối:');
+            if (!reason) return;
+            
+            try {
+                const { data, error } = await supabase
+                    .rpc('reject_weekly_report', { 
+                        p_report_id: reportId,
+                        p_reason: reason 
+                    });
+                
+                if (error) throw error;
+                
+                await loadWeeklyReports();
+                showSuccess('Đã từ chối báo cáo!');
+            } catch (error) {
+                console.error('Error rejecting report:', error);
+                alert('Lỗi từ chối báo cáo: ' + error.message);
+            }
+        }
+
+        // Load activity
+        async function loadActivity() {
+            try {
+                const tbody = document.querySelector('#activityTable tbody');
+                tbody.innerHTML = '<tr><td colspan="9" class="loading"><div class="loading-spinner"></div> Đang tải dữ liệu...</td></tr>';
+                
+                let query = supabase
+                    .from('user_activities')
+                    .select('*');
+                
+                const yearFilter = document.getElementById('activityYearFilter')?.value;
+                const weekFrom = document.getElementById('activityWeekFrom')?.value;
+                const weekTo = document.getElementById('activityWeekTo')?.value;
+                
+                if (yearFilter) {
+                    query = query.eq('year', parseInt(yearFilter));
+                }
+                if (weekFrom) {
+                    query = query.gte('iso_week', parseInt(weekFrom));
+                }
+                if (weekTo) {
+                    query = query.lte('iso_week', parseInt(weekTo));
+                }
+                
+                const { data: activities, error } = await query;
+                
+                if (error) throw error;
+                
+                displayActivities(activities || []);
+            } catch (error) {
+                console.error('Error loading activities:', error);
+                const tbody = document.querySelector('#activityTable tbody');
+                tbody.innerHTML = `<tr><td colspan="9" class="error">Lỗi: ${error.message}</td></tr>`;
+            }
+        }
+
+        function displayActivities(activities) {
+            const tbody = document.querySelector('#activityTable tbody');
+            
+            if (!activities || activities.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Không có dữ liệu</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            activities.forEach(activity => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${activity.year}</td>
+                        <td>${activity.iso_week}</td>
+                        <td>${activity.full_name}</td>
+                        <td>${activity.code_id || '-'}</td>
+                        <td>${activity.proj_name}</td>
+                        <td>${activity.customer || '-'}</td>
+                        <td>${activity.task_lines}</td>
+                        <td>${activity.hours_week || 0}</td>
+                        <td>
+                            <div class="progress-bar" style="width: 100px; display: inline-block;">
+                                <div class="progress-fill" style="width: ${activity.avg_progress_pct || 0}%"></div>
+                            </div>
+                            ${activity.avg_progress_pct || 0}%
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Load progress
+        async function loadProgress() {
+            try {
+                const tbody = document.querySelector('#progressTable tbody');
+                const statsContainer = document.getElementById('progressStats');
+                
+                tbody.innerHTML = '<tr><td colspan="12" class="loading"><div class="loading-spinner"></div> Đang tải dữ liệu...</td></tr>';
+                
+                const { data: progressData, error } = await supabase
+                    .from('project_progress')
+                    .select('*');
+                
+                if (error) throw error;
+                
+                const data = progressData || [];
+                
+                // Update stats
+                const totalProjects = data.length;
+                const activeProjects = data.filter(p => p.status === 'active').length;
+                const totalHours = data.reduce((sum, p) => sum + (p.hours_spent || 0), 0);
+                const avgProgress = totalProjects > 0 
+                    ? Math.round(data.reduce((sum, p) => sum + (p.overall_progress_pct || 0), 0) / totalProjects)
+                    : 0;
+                
+                statsContainer.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-value">${totalProjects}</div>
+                        <div class="stat-label">Tổng số dự án</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${activeProjects}</div>
+                        <div class="stat-label">Dự án đang hoạt động</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${totalHours}h</div>
+                        <div class="stat-label">Tổng giờ làm</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${avgProgress}%</div>
+                        <div class="stat-label">Tiến độ trung bình</div>
+                    </div>
+                `;
+                
+                // Update table
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="12" style="text-align: center;">Không có dữ liệu</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = '';
+                data.forEach(project => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${project.project_id}</td>
+                            <td>${project.proj_name}</td>
+                            <td>${project.customer || '-'}</td>
+                            <td>${formatDate(project.start_date)}</td>
+                            <td>${formatDate(project.end_date)}</td>
+                            <td>${getStatusBadge(project.status)}</td>
+                            <td>${project.total_tasks || 0}</td>
+                            <td>${project.completed_tasks || 0}</td>
+                            <td>
+                                <div class="progress-bar" style="width: 100px; display: inline-block;">
+                                    <div class="progress-fill" style="width: ${project.overall_progress_pct || 0}%"></div>
+                                </div>
+                                ${project.overall_progress_pct || 0}%
+                            </td>
+                            <td>${project.total_hours_estimated || 0}h</td>
+                            <td>${project.hours_spent || 0}h</td>
+                            <td>${project.team_members || 0}</td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error loading progress:', error);
+                const tbody = document.querySelector('#progressTable tbody');
+                tbody.innerHTML = `<tr><td colspan="12" class="error">Lỗi: ${error.message}</td></tr>`;
+            }
+        }
+
+        // Modal functions
         function showProjectModal(projectId = null) {
             const modal = document.getElementById('projectModal');
             const title = document.getElementById('projectModalTitle');
@@ -1401,92 +1839,11 @@
             }
         }
 
-        // ========================================
-        // TASKS CRUD
-        // ========================================
-        async function loadTasks() {
-            try {
-                const tbody = document.querySelector('#tasksTable tbody');
-                tbody.innerHTML = '<tr><td colspan="10" class="loading">Đang tải dữ liệu...</td></tr>';
-                
-                let query = supabase
-                    .from('tasks')
-                    .select(`
-                        *,
-                        project:projects(proj_name),
-                        user:user_profiles(full_name)
-                    `)
-                    .order('created_at', { ascending: false });
-                
-                // Apply filters
-                const projectFilter = document.getElementById('taskProjectFilter').value;
-                const userFilter = document.getElementById('taskUserFilter').value;
-                
-                if (projectFilter) {
-                    query = query.eq('project_id', projectFilter);
-                }
-                if (userFilter) {
-                    query = query.eq('user_id', userFilter);
-                }
-                
-                const { data: tasks, error } = await query;
-                
-                if (error) throw error;
-                
-                db.tasks = tasks;
-                displayTasks(tasks);
-            } catch (error) {
-                console.error('Error loading tasks:', error);
-                const tbody = document.querySelector('#tasksTable tbody');
-                tbody.innerHTML = `<tr><td colspan="10" class="error">Lỗi tải dữ liệu: ${error.message}</td></tr>`;
-            }
-        }
-
-        function displayTasks(tasks) {
-            const tbody = document.querySelector('#tasksTable tbody');
-            
-            if (tasks.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center;">Không có dữ liệu</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = '';
-            tasks.forEach(task => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${task.task_id}</td>
-                        <td>${task.project?.proj_name || '-'}</td>
-                        <td>${task.user?.full_name || '-'}</td>
-                        <td>${task.task_name}</td>
-                        <td>${task.description || '-'}</td>
-                        <td>${formatDate(task.start_date)}</td>
-                        <td>${formatDate(task.end_date)}</td>
-                        <td>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${task.progress_pct}%"></div>
-                            </div>
-                            ${task.progress_pct}%
-                        </td>
-                        <td>${getStatusBadge(task.status)}</td>
-                        <td>
-                            <div class="actions">
-                                ${canEdit('task', task) ? `
-                                    <button class="btn btn-sm btn-primary" onclick="editTask('${task.task_id}')">Sửa</button>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteTask('${task.task_id}')">Xóa</button>
-                                ` : '<span class="no-permission">Không có quyền</span>'}
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
         function showTaskModal(taskId = null) {
             const modal = document.getElementById('taskModal');
             const title = document.getElementById('taskModalTitle');
             const form = document.getElementById('taskForm');
             
-            // Populate dropdowns
             populateTaskDropdowns();
             
             if (taskId) {
@@ -1549,78 +1906,6 @@
             }
         }
 
-        // ========================================
-        // WEEKLY REPORTS
-        // ========================================
-        async function loadWeeklyReports() {
-            try {
-                const tbody = document.querySelector('#weeklyReportsTable tbody');
-                tbody.innerHTML = '<tr><td colspan="8" class="loading">Đang tải dữ liệu...</td></tr>';
-                
-                let query = supabase
-                    .from('weekly_reports')
-                    .select(`
-                        *,
-                        user:user_profiles(full_name)
-                    `)
-                    .order('year', { ascending: false })
-                    .order('iso_week', { ascending: false });
-                
-                // Apply filters
-                const yearFilter = document.getElementById('reportYearFilter').value;
-                const weekFilter = document.getElementById('reportWeekFilter').value;
-                
-                if (yearFilter) {
-                    query = query.eq('year', parseInt(yearFilter));
-                }
-                if (weekFilter) {
-                    query = query.eq('iso_week', parseInt(weekFilter));
-                }
-                
-                const { data: reports, error } = await query;
-                
-                if (error) throw error;
-                
-                displayWeeklyReports(reports);
-            } catch (error) {
-                console.error('Error loading weekly reports:', error);
-                const tbody = document.querySelector('#weeklyReportsTable tbody');
-                tbody.innerHTML = `<tr><td colspan="8" class="error">Lỗi tải dữ liệu: ${error.message}</td></tr>`;
-            }
-        }
-
-        function displayWeeklyReports(reports) {
-            const tbody = document.querySelector('#weeklyReportsTable tbody');
-            
-            if (reports.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Không có dữ liệu</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = '';
-            reports.forEach(report => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${report.report_id}</td>
-                        <td>${report.user?.full_name || '-'}</td>
-                        <td>${report.iso_week}</td>
-                        <td>${report.year}</td>
-                        <td>${report.report_note || '-'}</td>
-                        <td>${getStatusBadge(report.status)}</td>
-                        <td>${formatDate(report.submitted_at)}</td>
-                        <td>
-                            <div class="actions">
-                                ${canEdit('report', report) ? `
-                                    <button class="btn btn-sm btn-primary" onclick="editWeeklyReport(${report.report_id})">Sửa</button>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteWeeklyReport(${report.report_id})">Xóa</button>
-                                ` : '<span class="no-permission">Không có quyền</span>'}
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
         function showWeeklyReportModal(reportId = null) {
             const modal = document.getElementById('weeklyReportModal');
             const title = document.getElementById('weeklyReportModalTitle');
@@ -1628,7 +1913,6 @@
             
             if (reportId) {
                 title.textContent = 'Sửa Báo cáo Tuần';
-                // Load report data - implement if needed
             } else {
                 title.textContent = 'Tạo Báo cáo Tuần mới';
                 form.reset();
@@ -1638,6 +1922,29 @@
             }
             
             modal.style.display = 'block';
+        }
+
+        function editWeeklyReport(reportId) {
+            showWeeklyReportModal(reportId);
+        }
+
+        async function deleteWeeklyReport(reportId) {
+            if (!confirm('Bạn có chắc muốn xóa báo cáo này?')) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('weekly_reports')
+                    .delete()
+                    .eq('report_id', reportId);
+                
+                if (error) throw error;
+                
+                await loadWeeklyReports();
+                showSuccess('Xóa báo cáo thành công!');
+            } catch (error) {
+                console.error('Error deleting report:', error);
+                alert('Lỗi xóa báo cáo: ' + error.message);
+            }
         }
 
         let weeklyTaskIndex = 0;
@@ -1659,14 +1966,10 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <div class="form-group">
                             <label>Chọn công việc *</label>
-                            <select class="form-control" name="task_id_${taskIndex}" onchange="updateProjectInfo(${taskIndex})" required>
+                            <select class="form-control" name="task_id_${taskIndex}" required>
                                 <option value="">Chọn công việc</option>
                                 ${taskOptions}
                             </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Dự án</label>
-                            <div id="project_info_${taskIndex}" class="project-info">Chưa chọn công việc</div>
                         </div>
                         <div class="form-group">
                             <label>Số giờ làm trong tuần *</label>
@@ -1676,32 +1979,15 @@
                             <label>Tiến độ (%)</label>
                             <input type="number" class="form-control" name="progress_pct_${taskIndex}" min="0" max="100" value="0">
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Ghi chú</label>
-                        <input type="text" class="form-control" name="week_note_${taskIndex}">
+                        <div class="form-group">
+                            <label>Ghi chú</label>
+                            <input type="text" class="form-control" name="week_note_${taskIndex}">
+                        </div>
                     </div>
                 </div>
             `;
             
             container.insertAdjacentHTML('beforeend', taskHtml);
-        }
-
-        function updateProjectInfo(taskIndex) {
-            const taskSelect = document.querySelector(`[name="task_id_${taskIndex}"]`);
-            const projectInfoDiv = document.getElementById(`project_info_${taskIndex}`);
-            
-            if (taskSelect.value) {
-                const task = db.tasks.find(t => t.task_id === taskSelect.value);
-                if (task) {
-                    const project = db.projects.find(p => p.project_id === task.project_id);
-                    if (project) {
-                        projectInfoDiv.innerHTML = `${project.proj_name} (${project.customer || 'N/A'})`;
-                    }
-                }
-            } else {
-                projectInfoDiv.innerHTML = 'Chưa chọn công việc';
-            }
         }
 
         function removeWeeklyTask(index) {
@@ -1711,158 +1997,11 @@
             }
         }
 
-        // ========================================
-        // USER ACTIVITY
-        // ========================================
-        async function loadActivity() {
-            try {
-                const tbody = document.querySelector('#activityTable tbody');
-                tbody.innerHTML = '<tr><td colspan="9" class="loading">Đang tải dữ liệu...</td></tr>';
-                
-                let query = supabase
-                    .from('user_activities')
-                    .select('*');
-                
-                // Apply filters
-                const yearFilter = document.getElementById('activityYearFilter').value;
-                const weekFrom = parseInt(document.getElementById('activityWeekFrom').value);
-                const weekTo = parseInt(document.getElementById('activityWeekTo').value);
-                const projectFilter = document.getElementById('activityProjectFilter').value;
-                
-                if (yearFilter) {
-                    query = query.eq('year', parseInt(yearFilter));
-                }
-                if (weekFrom) {
-                    query = query.gte('iso_week', weekFrom);
-                }
-                if (weekTo) {
-                    query = query.lte('iso_week', weekTo);
-                }
-                if (projectFilter) {
-                    query = query.eq('project_id', projectFilter);
-                }
-                
-                const { data: activities, error } = await query;
-                
-                if (error) throw error;
-                
-                displayActivities(activities);
-            } catch (error) {
-                console.error('Error loading activities:', error);
-                const tbody = document.querySelector('#activityTable tbody');
-                tbody.innerHTML = `<tr><td colspan="9" class="error">Lỗi tải dữ liệu: ${error.message}</td></tr>`;
-            }
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
         }
 
-        function displayActivities(activities) {
-            const tbody = document.querySelector('#activityTable tbody');
-            
-            if (!activities || activities.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Không có dữ liệu</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = '';
-            activities.forEach(activity => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${activity.year}</td>
-                        <td>${activity.iso_week}</td>
-                        <td>${activity.full_name}</td>
-                        <td>${activity.code_id || '-'}</td>
-                        <td>${activity.proj_name}</td>
-                        <td>${activity.customer || '-'}</td>
-                        <td>${activity.task_lines}</td>
-                        <td>${activity.hours_week || 0}</td>
-                        <td>
-                            <div class="progress-bar" style="width: 100px; display: inline-block;">
-                                <div class="progress-fill" style="width: ${activity.avg_progress_pct || 0}%"></div>
-                            </div>
-                            ${activity.avg_progress_pct || 0}%
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        // ========================================
-        // PROJECT PROGRESS
-        // ========================================
-        async function loadProgress() {
-            try {
-                const tbody = document.querySelector('#progressTable tbody');
-                const statsContainer = document.getElementById('progressStats');
-                
-                tbody.innerHTML = '<tr><td colspan="12" class="loading">Đang tải dữ liệu...</td></tr>';
-                
-                const { data: progressData, error } = await supabase
-                    .from('project_progress')
-                    .select('*');
-                
-                if (error) throw error;
-                
-                // Update stats
-                const totalProjects = progressData.length;
-                const activeProjects = progressData.filter(p => p.status === 'active').length;
-                const totalHours = progressData.reduce((sum, p) => sum + (p.hours_spent || 0), 0);
-                const avgProgress = totalProjects > 0 
-                    ? Math.round(progressData.reduce((sum, p) => sum + (p.overall_progress_pct || 0), 0) / totalProjects)
-                    : 0;
-                
-                statsContainer.innerHTML = `
-                    <div class="stat-card">
-                        <div class="stat-value">${totalProjects}</div>
-                        <div class="stat-label">Tổng số dự án</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${activeProjects}</div>
-                        <div class="stat-label">Dự án đang hoạt động</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${totalHours}h</div>
-                        <div class="stat-label">Tổng giờ làm</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${avgProgress}%</div>
-                        <div class="stat-label">Tiến độ trung bình</div>
-                    </div>
-                `;
-                
-                // Update table
-                tbody.innerHTML = '';
-                progressData.forEach(project => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${project.project_id}</td>
-                            <td>${project.proj_name}</td>
-                            <td>${project.customer || '-'}</td>
-                            <td>${formatDate(project.start_date)}</td>
-                            <td>${formatDate(project.end_date)}</td>
-                            <td>${getStatusBadge(project.status)}</td>
-                            <td>${project.total_tasks || 0}</td>
-                            <td>${project.completed_tasks || 0}</td>
-                            <td>
-                                <div class="progress-bar" style="width: 100px; display: inline-block;">
-                                    <div class="progress-fill" style="width: ${project.overall_progress_pct || 0}%"></div>
-                                </div>
-                                ${project.overall_progress_pct || 0}%
-                            </td>
-                            <td>${project.total_hours_estimated || 0}h</td>
-                            <td>${project.hours_spent || 0}h</td>
-                            <td>${project.team_members || 0}</td>
-                        </tr>
-                    `;
-                });
-            } catch (error) {
-                console.error('Error loading progress:', error);
-                const tbody = document.querySelector('#progressTable tbody');
-                tbody.innerHTML = `<tr><td colspan="12" class="error">Lỗi tải dữ liệu: ${error.message}</td></tr>`;
-            }
-        }
-
-        // ========================================
-        // FORM SUBMISSIONS
-        // ========================================
+        // Form submissions
         document.getElementById('projectForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -1878,7 +2017,6 @@
                 };
                 
                 if (projectId) {
-                    // Update existing project
                     const { error } = await supabase
                         .from('projects')
                         .update(formData)
@@ -1886,7 +2024,6 @@
                     
                     if (error) throw error;
                 } else {
-                    // Create new project with auto-generated ID
                     const year = new Date().getFullYear().toString().slice(-2);
                     const seq = (db.projects.length + 1).toString().padStart(3, '0');
                     const newProjectId = `${year}_${seq}`;
@@ -1896,7 +2033,7 @@
                         .insert({
                             project_id: newProjectId,
                             ...formData,
-                            created_by: currentUser.id // RLS sẽ tự động thêm field này
+                            created_by: currentUser.id
                         });
                     
                     if (error) throw error;
@@ -1930,7 +2067,6 @@
                 };
                 
                 if (taskId) {
-                    // Update existing task
                     const { error } = await supabase
                         .from('tasks')
                         .update(formData)
@@ -1938,12 +2074,9 @@
                     
                     if (error) throw error;
                 } else {
-                    // Create new task with auto-generated ID
-                    const project = db.projects.find(p => p.project_id === formData.project_id);
                     const user = db.users.find(u => u.id === formData.user_id);
                     const taskSeq = (db.tasks.filter(t => t.project_id === formData.project_id).length + 1).toString().padStart(4, '0');
-                    
-                    const newTaskId = `${formData.project_id}_${user.code_id || '00'}_${taskSeq}`;
+                    const newTaskId = `${formData.project_id}_${user?.code_id || '00'}_${taskSeq}`;
                     
                     const { error } = await supabase
                         .from('tasks')
@@ -1978,7 +2111,6 @@
                     created_by: currentUser.id
                 };
                 
-                // Insert report
                 const { data: report, error: reportError } = await supabase
                     .from('weekly_reports')
                     .insert(reportData)
@@ -1987,7 +2119,6 @@
                 
                 if (reportError) throw reportError;
                 
-                // Collect and insert tasks
                 const taskItems = document.querySelectorAll('#weeklyTasksList .task-item');
                 const tasks = [];
                 
@@ -2022,39 +2153,78 @@
             }
         });
 
-        // ========================================
-        // HELPER FUNCTIONS
-        // ========================================
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        // Enhanced canEdit function with RLS awareness
-        function canEdit(type, item) {
+        // Check permissions based on role
+        function checkPermission(action, resource, item = null) {
             const role = currentUser?.role || 'staff';
             
+            // Admin has all permissions
             if (role === 'admin') return true;
             
-            switch(type) {
+            switch (resource) {
                 case 'project':
-                    // Creator or admin can edit
-                    return item.created_by === currentUser.id || role === 'pm';
+                    switch (action) {
+                        case 'create':
+                            return role === 'pm';
+                        case 'update':
+                            if (role === 'pm') {
+                                // PM can update projects they manage or created
+                                return !item || item.project_manager === currentUser.id || 
+                                       item.created_by === currentUser.id;
+                            }
+                            return false;
+                        case 'delete':
+                            return false; // Only admin
+                        default:
+                            return true; // View
+                    }
                     
                 case 'task':
-                    // Assigned user, creator or admin can edit
-                    return item.user_id === currentUser.id || 
-                           item.created_by === currentUser.id ||
-                           role === 'admin';
-                           
+                    switch (action) {
+                        case 'create':
+                            return true; // All can create
+                        case 'update':
+                            if (role === 'pm') return true;
+                            if (role === 'staff') {
+                                // Staff can only update their own tasks
+                                return item && (item.user_id === currentUser.id || 
+                                              item.created_by === currentUser.id);
+                            }
+                            return false;
+                        case 'delete':
+                            if (role === 'pm') {
+                                return !item || item.created_by === currentUser.id;
+                            }
+                            return false;
+                        default:
+                            return true; // View
+                    }
+                    
                 case 'report':
-                    // Only own draft reports can be edited
-                    return item.user_id === currentUser.id && item.status === 'draft';
+                    switch (action) {
+                        case 'create':
+                            return true;
+                        case 'update':
+                            if (role === 'pm') return true;
+                            // Users can only update their own draft reports
+                            return item && item.user_id === currentUser.id && 
+                                   item.status === 'draft';
+                        case 'delete':
+                            // Users can only delete their own draft reports
+                            return item && item.user_id === currentUser.id && 
+                                   item.status === 'draft';
+                        case 'approve':
+                        case 'reject':
+                            return role === 'pm';
+                        default:
+                            return true; // View
+                    }
                     
                 default:
                     return false;
             }
         }
 
+        // Helper functions
         function formatDate(dateString) {
             if (!dateString) return '-';
             const date = new Date(dateString);
@@ -2063,13 +2233,21 @@
 
         function getStatusBadge(status) {
             const statusMap = {
+                // Project status
+                'planning': '<span style="background: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Lập kế hoạch</span>',
                 'active': '<span style="background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Đang hoạt động</span>',
-                'completed': '<span style="background: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Đã hoàn thành</span>',
+                'completed': '<span style="background: #17a2b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Đã hoàn thành</span>',
                 'paused': '<span style="background: #ffc107; color: #000; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Tạm dừng</span>',
-                'pending': '<span style="background: #17a2b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Chờ xử lý</span>',
+                'cancelled': '<span style="background: #dc3545; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Đã hủy</span>',
+                // Task status
+                'pending': '<span style="background: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Chờ xử lý</span>',
                 'in_progress': '<span style="background: #007bff; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Đang thực hiện</span>',
+                'review': '<span style="background: #e83e8c; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Đang review</span>',
+                // Report status
                 'draft': '<span style="background: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Nháp</span>',
-                'submitted': '<span style="background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Đã nộp</span>'
+                'submitted': '<span style="background: #007bff; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Đã nộp</span>',
+                'approved': '<span style="background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Đã duyệt</span>',
+                'rejected': '<span style="background: #dc3545; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Từ chối</span>'
             };
             return statusMap[status] || status;
         }
@@ -2082,19 +2260,7 @@
             return 1 + Math.round(((tempDate.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
         }
 
-        function showError(elementId, message) {
-            const errorElement = document.getElementById(elementId);
-            if (errorElement) {
-                errorElement.textContent = message;
-                errorElement.style.display = 'block';
-                setTimeout(() => {
-                    errorElement.style.display = 'none';
-                }, 5000);
-            }
-        }
-
         function showSuccess(message) {
-            // Create temporary success message
             const successDiv = document.createElement('div');
             successDiv.className = 'success';
             successDiv.textContent = message;
@@ -2109,147 +2275,8 @@
             }, 3000);
         }
 
-        // ========================================
-        // AUTOCOMPLETE & SEARCH FUNCTIONS
-        // ========================================
-        function setupAutocomplete(inputId, suggestionsId, data, searchFields, onSelect) {
-            const input = document.getElementById(inputId);
-            const suggestions = document.getElementById(suggestionsId);
-            
-            input.addEventListener('focus', () => {
-                if (input.value.length > 0) {
-                    showSuggestions(input.value, data, searchFields, suggestions, onSelect);
-                }
-            });
-            
-            input.addEventListener('blur', () => {
-                setTimeout(() => {
-                    suggestions.style.display = 'none';
-                }, 200);
-            });
-        }
-
-        function showSuggestions(query, data, searchFields, suggestionsEl, onSelect) {
-            const filtered = data.filter(item => {
-                return searchFields.some(field => 
-                    item[field] && item[field].toLowerCase().includes(query.toLowerCase())
-                );
-            });
-            
-            if (filtered.length === 0) {
-                suggestionsEl.style.display = 'none';
-                return;
-            }
-            
-            suggestionsEl.innerHTML = '';
-            filtered.slice(0, 5).forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'autocomplete-suggestion';
-                div.innerHTML = highlightMatch(item[searchFields[0]], query);
-                if (searchFields.length > 1 && item[searchFields[1]]) {
-                    div.innerHTML += ` <small>(${item[searchFields[1]]})</small>`;
-                }
-                div.onclick = () => onSelect(item);
-                suggestionsEl.appendChild(div);
-            });
-            
-            suggestionsEl.style.display = 'block';
-        }
-
-        function highlightMatch(text, query) {
-            const regex = new RegExp(`(${query})`, 'gi');
-            return text.replace(regex, '<strong>$1</strong>');
-        }
-
-        // Search Functions
-        function searchProjects(query) {
-            if (!query) {
-                loadProjects();
-                return;
-            }
-            
-            const suggestions = document.getElementById('projectSearchSuggestions');
-            showSuggestions(query, db.projects, ['proj_name', 'customer'], suggestions, (project) => {
-                document.getElementById('projectSearch').value = project.proj_name;
-                suggestions.style.display = 'none';
-                filterProjects(project.project_id);
-            });
-            
-            // Also filter the table
-            const filtered = db.projects.filter(p => 
-                p.proj_name.toLowerCase().includes(query.toLowerCase()) ||
-                (p.customer && p.customer.toLowerCase().includes(query.toLowerCase()))
-            );
-            displayProjects(filtered);
-        }
-
-        function searchTasks(query) {
-            if (!query) {
-                loadTasks();
-                return;
-            }
-            
-            const suggestions = document.getElementById('taskSearchSuggestions');
-            showSuggestions(query, db.tasks, ['task_name'], suggestions, (task) => {
-                document.getElementById('taskSearch').value = task.task_name;
-                suggestions.style.display = 'none';
-                filterTasks(task.task_id);
-            });
-            
-            const filtered = db.tasks.filter(t => 
-                t.task_name.toLowerCase().includes(query.toLowerCase())
-            );
-            displayTasks(filtered);
-        }
-
-        function searchUserActivity(query) {
-            if (!query) {
-                loadActivity();
-                return;
-            }
-            
-            const suggestions = document.getElementById('userActivitySuggestions');
-            showSuggestions(query, db.users, ['full_name', 'code_id'], suggestions, (user) => {
-                document.getElementById('userActivitySearch').value = user.full_name;
-                suggestions.style.display = 'none';
-                filterActivityByUser(user.id);
-            });
-        }
-
-        // Filter Functions
-        function filterProjects(projectId) {
-            const filtered = db.projects.filter(p => p.project_id === projectId);
-            displayProjects(filtered);
-        }
-
-        function filterTasks(taskId) {
-            const filtered = db.tasks.filter(t => t.task_id === taskId);
-            displayTasks(filtered);
-        }
-
-        async function filterActivityByUser(userId) {
-            // Reload activity with user filter
-            const tbody = document.querySelector('#activityTable tbody');
-            tbody.innerHTML = '<tr><td colspan="9" class="loading">Đang tải dữ liệu...</td></tr>';
-            
-            try {
-                const { data: activities, error } = await supabase
-                    .from('user_activities')
-                    .select('*')
-                    .eq('user_id', userId);
-                
-                if (error) throw error;
-                displayActivities(activities);
-            } catch (error) {
-                console.error('Error filtering activities:', error);
-                tbody.innerHTML = `<tr><td colspan="9" class="error">Lỗi tải dữ liệu: ${error.message}</td></tr>`;
-            }
-        }
-
-        // Populate filters
         function populateFilters() {
-            // Populate project filters
-            const projectFilters = ['taskProjectFilter', 'activityProjectFilter'];
+            const projectFilters = ['taskProjectFilter'];
             projectFilters.forEach(filterId => {
                 const select = document.getElementById(filterId);
                 if (select) {
@@ -2260,7 +2287,6 @@
                 }
             });
             
-            // Populate user filter
             const userFilter = document.getElementById('taskUserFilter');
             if (userFilter) {
                 userFilter.innerHTML = '<option value="">Tất cả người dùng</option>';
@@ -2286,37 +2312,3 @@
                 event.target.style.display = 'none';
             }
         }
-
-        // Initialize autocomplete after data loads
-        async function initializeAutocomplete() {
-            // Wait for data to be loaded
-            setTimeout(() => {
-                setupAutocomplete('projectSearch', 'projectSearchSuggestions', db.projects, ['proj_name', 'customer'], (project) => {
-                    document.getElementById('projectSearch').value = project.proj_name;
-                    document.getElementById('projectSearchSuggestions').style.display = 'none';
-                    filterProjects(project.project_id);
-                });
-                
-                setupAutocomplete('taskSearch', 'taskSearchSuggestions', db.tasks, ['task_name'], (task) => {
-                    document.getElementById('taskSearch').value = task.task_name;
-                    document.getElementById('taskSearchSuggestions').style.display = 'none';
-                    filterTasks(task.task_id);
-                });
-                
-                setupAutocomplete('userActivitySearch', 'userActivitySuggestions', db.users, ['full_name'], (user) => {
-                    document.getElementById('userActivitySearch').value = user.full_name;
-                    document.getElementById('userActivitySuggestions').style.display = 'none';
-                    filterActivityByUser(user.id);
-                });
-            }, 1000);
-        }
-
-        // Call this after loading initial data
-        window.addEventListener('load', () => {
-            if (currentUser) {
-                initializeAutocomplete();
-            }
-        });
-    </script>
-</body>
-</html>
